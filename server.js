@@ -2,19 +2,26 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Cấu hình môi trường và bảo mật
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Xử lý đường dẫn để phục vụ Frontend (Giải quyết lỗi 404 trên Render)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Cấu hình giới hạn dữ liệu cho hình ảnh độ phân giải cao
-app.use(cors());
+app.use(cors()); // Mở rộng CORS để nhận diện từ mọi nguồn khi deploy
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
 // Khởi tạo Google AI với cấu hình an toàn
-const API_KEY = "AIzaSyB72sOdpRzuxoBkcxeSfv0W3Q60Td4_AJE"; 
+// Lưu ý: Nên dùng process.env.GEMINI_API_KEY trên Render thay vì dán cứng để bảo mật cao hơn
+const API_KEY = process.env.GEMINI_API_KEY || "AIzaSyB72sOdpRzuxoBkcxeSfv0W3Q60Td4_AJE"; 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 /**
@@ -22,11 +29,8 @@ const genAI = new GoogleGenerativeAI(API_KEY);
  * Cấu hình tham số cực thấp (Temperature = 0.1) để tránh AI sáng tạo sai kiến thức y khoa
  */
 
-app.use(cors({
-  origin: 'https://chammyhiii.github.io' // Link GitHub Pages của bạn
-}));
 const medicalModel = genAI.getGenerativeModel({ 
-    model: "gemini-2.5-flash",
+    model: "gemini-2.5-flash", // Chỉnh về bản ổn định nhất hiện tại để tránh lỗi model
     generationConfig: { 
         temperature: 0.1, 
         topP: 0.8, 
@@ -105,6 +109,12 @@ app.post("/api/v1/medical/analyze", async (req, res) => {
             emergency_instructions: "Vui lòng liên hệ cơ sở y tế gần nhất nếu tình trạng xấu đi."
         });
     }
+});
+
+// Phục vụ các file Frontend tĩnh sau khi build (Dành cho việc để chung Repo trên Render)
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
 });
 
 app.listen(PORT, () => {
