@@ -21,6 +21,10 @@ const genAI = new GoogleGenerativeAI(API_KEY);
  * MODULE: MEDICAL AI ENGINE
  * Cấu hình tham số cực thấp (Temperature = 0.1) để tránh AI sáng tạo sai kiến thức y khoa
  */
+const cors = require('cors');
+app.use(cors({
+  origin: 'https://chammyhiii.github.io' // Link GitHub Pages của bạn
+}));
 const medicalModel = genAI.getGenerativeModel({ 
     model: "gemini-2.5-flash",
     generationConfig: { 
