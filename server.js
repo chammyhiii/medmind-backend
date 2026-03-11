@@ -6,7 +6,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // Cấu hình môi trường và bảo mật
 dotenv.config();
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
 // Cấu hình giới hạn dữ liệu cho hình ảnh độ phân giải cao
 app.use(cors());
@@ -21,7 +21,7 @@ const genAI = new GoogleGenerativeAI(API_KEY);
  * MODULE: MEDICAL AI ENGINE
  * Cấu hình tham số cực thấp (Temperature = 0.1) để tránh AI sáng tạo sai kiến thức y khoa
  */
-const cors = require('cors');
+
 app.use(cors({
   origin: 'https://chammyhiii.github.io' // Link GitHub Pages của bạn
 }));
@@ -83,7 +83,7 @@ app.post("/api/v1/medical/analyze", async (req, res) => {
             aiResult = await medicalModel.generateContent([MASTER_PROMPT, prompt || "Phân tích dữ liệu hình ảnh", imagePart]);
         } else {
             const chatSession = medicalModel.startChat({ 
-                history: history ? history.map(h => ({ role: h.role, parts: [{ text: h.text }] })) : [] 
+              history: history ? history.map(h => ({ role: h.role === 'model' ? 'model' : 'user', parts: [{ text: h.text }] })) : []
             });
             aiResult = await chatSession.sendMessage(`${MASTER_PROMPT} | Input: ${prompt}`);
         }
